@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.0.5] - 2026-05-XX
+
+### Added
+
+### Changed
+
+### Fixed
+- Redirect to `/login` when there is no refresh token.
+- Default scopes omit `offline_access`.
+
 ## [1.0.4] - 2026-05-11
 
 ### Added

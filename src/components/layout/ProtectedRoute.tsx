@@ -8,10 +8,10 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const authenticated = useAuthStore((s) => s.isAuthenticated());
   const bypassToken = import.meta.env.VITE_ACCESS_TOKEN;
   const location = useLocation();
-  if (!accessToken && !bypassToken) {
+  if (!authenticated && !bypassToken) {
     const originalPath = location.pathname + location.search;
     return <Navigate to="/login" replace state={{ from: originalPath }} />;
   }

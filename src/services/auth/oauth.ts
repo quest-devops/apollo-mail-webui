@@ -125,8 +125,7 @@ function getRedirectUri(): string {
 }
 
 export async function startAuthFlow(username: string, returnUrl?: string | null): Promise<void> {
-  const { authorization_endpoint, token_endpoint, end_session_endpoint, scopes_supported } =
-    await discover(username);
+  const { authorization_endpoint, token_endpoint, end_session_endpoint, scopes_supported } = await discover(username);
 
   const codeVerifier = generateCodeVerifier();
   const { challenge: codeChallenge, method: codeChallengeMethod } = await generateCodeChallenge(codeVerifier);
@@ -167,7 +166,7 @@ export async function startAuthFlow(username: string, returnUrl?: string | null)
   if (SCOPES && SCOPES.length > 0) {
     scope = SCOPES;
   } else if (scopes_supported?.includes('openid')) {
-    scope = ['openid', 'email', 'profile'].filter((s) => scopes_supported.includes(s)).join(' ');
+    scope = ['openid', 'email', 'profile', 'offline_access'].filter((s) => scopes_supported.includes(s)).join(' ');
   } else {
     scope = '';
   }

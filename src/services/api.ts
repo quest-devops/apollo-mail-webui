@@ -107,11 +107,17 @@ export async function apiFetch(path: string, options?: RequestInit): Promise<Res
 
   let response = await makeRequest();
 
-  if (response.status === 401 && useAuthStore.getState().refreshToken) {
-    try {
-      await refreshAccessToken();
-      response = await makeRequest();
-    } catch {
+  if (response.status === 401) {
+    if (useAuthStore.getState().refreshToken) {
+      try {
+        await refreshAccessToken();
+        response = await makeRequest();
+      } catch {
+        throw new ApiError(401, 'Unauthorized', null);
+      }
+    } else {
+      useAuthStore.getState().logout();
+      window.location.href = `${getBasePath()}/login`;
       throw new ApiError(401, 'Unauthorized', null);
     }
   }
