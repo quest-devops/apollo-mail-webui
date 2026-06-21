@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.0.5] - 2026-05-XX
+## [1.0.5] - 2026-06-21
 
 ### Added
 
@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Fixed
 - Redirect to `/login` when there is no refresh token.
+- Include required JMAP capabilities in `using`.
 - Default scopes omit `offline_access`.
 
 ## [1.0.4] - 2026-05-11

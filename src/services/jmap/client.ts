@@ -10,7 +10,17 @@ import { logJmapExchange } from '@/lib/debug';
 import type { JmapMethodCall, JmapMethodResponse, JmapQueryResponse, JmapResponse } from '@/types/jmap';
 import type { Schema } from '@/types/schema';
 
-const JMAP_USING = ['urn:ietf:params:jmap:core', 'urn:stalwart:jmap'];
+const JMAP_USING = [
+  'urn:ietf:params:jmap:core',
+  'urn:stalwart:jmap',
+  'urn:ietf:params:jmap:blob',
+  'urn:ietf:params:jmap:mail',
+  'urn:ietf:params:jmap:calendars',
+  'urn:ietf:params:jmap:contacts',
+  'urn:ietf:params:jmap:principals',
+  'urn:ietf:params:jmap:sieve',
+  'urn:ietf:params:jmap:vacationresponse',
+];
 
 export function getAccountId(objectType: string): string {
   const { primaryAccountId, activeAccountId } = useAuthStore.getState();
