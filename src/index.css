@@ -18,7 +18,10 @@
 
   --content-background: oklch(0.97 0.003 285.823);
 
-  --primary: oklch(0.205 0.017 285.823);
+  /* ApolloMail — accent da marca. Light usa emerald escuro (#00783D): o bright reprova contraste em fundo branco. */
+  --brand: #00783D;
+
+  --primary: var(--brand);
   --primary-foreground: oklch(0.985 0.002 285.823);
 
   --secondary: oklch(0.965 0.005 285.823);
@@ -35,7 +38,7 @@
 
   --border: oklch(0.922 0.007 285.823);
   --input: oklch(0.922 0.007 285.823);
-  --ring: oklch(0.708 0.015 285.823);
+  --ring: var(--brand);
 
   --radius: 0.5rem;
 
@@ -58,8 +61,11 @@
 
   --content-background: oklch(0.115 0.005 285.823);
 
-  --primary: oklch(0.985 0.002 285.823);
-  --primary-foreground: oklch(0.205 0.017 285.823);
+  /* ApolloMail — no dark o CRT Emerald bright (#2FE68C) passa e é o accent único da marca. */
+  --brand: #2FE68C;
+
+  --primary: var(--brand);
+  --primary-foreground: #141414;
 
   --secondary: oklch(0.274 0.009 285.823);
   --secondary-foreground: oklch(0.985 0.002 285.823);
@@ -75,7 +81,7 @@
 
   --border: oklch(0.274 0.009 285.823);
   --input: oklch(0.274 0.009 285.823);
-  --ring: oklch(0.553 0.013 285.823);
+  --ring: var(--brand);
 
   --chart-1: 220 70% 60%;
   --chart-2: 160 60% 55%;

@@ -124,8 +124,23 @@ function getRedirectUri(): string {
   return `${window.location.origin}${basePath}/oauth/callback`;
 }
 
+// Os endpoints do discover vêm relativos (ex.: "/login", "/auth/token") — pertencem ao servidor da API.
+// Em dev o SPA roda em porta separada (5173) e a API em 8080; sem resolver contra a base da API o
+// navegador resolveria contra a origem do SPA e o login quebraria. Em produção (API = origem) é no-op.
+function resolveEndpoint(endpoint: string): string {
+  if (/^https?:\/\//i.test(endpoint)) return endpoint;
+  const base = getApiBaseUrl();
+  return `${base}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+}
+
 export async function startAuthFlow(username: string, returnUrl?: string | null): Promise<void> {
-  const { authorization_endpoint, token_endpoint, end_session_endpoint, scopes_supported } = await discover(username);
+  const discovery = await discover(username);
+  const authorization_endpoint = resolveEndpoint(discovery.authorization_endpoint);
+  const token_endpoint = resolveEndpoint(discovery.token_endpoint);
+  const end_session_endpoint = discovery.end_session_endpoint
+    ? resolveEndpoint(discovery.end_session_endpoint)
+    : undefined;
+  const { scopes_supported } = discovery;
 
   const codeVerifier = generateCodeVerifier();
   const { challenge: codeChallenge, method: codeChallengeMethod } = await generateCodeChallenge(codeVerifier);

@@ -27,17 +27,15 @@ interface OtpAuthFieldProps {
   readOnly: boolean;
 }
 
-const STALWART_IMAGE_URL = 'https://stalw.art/img/favicon-32x32.png';
-
+// ApolloMail: sem ícone remoto no otpauth (o original apontava para o favicon do stalw.art).
+// Quando houver um ícone Apollo hospedado, reintroduzir via `image=` aqui.
 function buildOtpAuthUrl(totp: OTPAuth.TOTP): string {
-  const base = totp.toString();
-  const sep = base.includes('?') ? '&' : '?';
-  return `${base}${sep}image=${encodeURIComponent(STALWART_IMAGE_URL)}`;
+  return totp.toString();
 }
 
 function generateTotp(): { totp: OTPAuth.TOTP; url: string } {
   const totp = new OTPAuth.TOTP({
-    issuer: 'Stalwart',
+    issuer: 'ApolloMail',
     label: 'account',
     algorithm: 'SHA1',
     digits: 6,
