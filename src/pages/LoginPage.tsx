@@ -148,6 +148,10 @@ export default function LoginPage() {
             </p>
           )}
 
+          <p className="alogin-legal">
+            Ao continuar, você concorda com os Termos de Uso e a Política de Privacidade.
+          </p>
+
           <p className="alogin-rodape">ApolloMail · Console</p>
         </form>
       </main>
