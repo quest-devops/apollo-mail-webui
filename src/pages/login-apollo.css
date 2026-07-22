@@ -1,0 +1,215 @@
+/*
+ * SPDX-FileCopyrightText: 2020 Stalwart Labs LLC <hello@stalw.art>
+ *
+ * SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-SEL
+ *
+ * Tela de login no padrão dos apps Apollo — réplica do tema "terminal emerald"
+ * do ApolloAuth, a mesma usada no webmail (plugin apollobrand). Assets em
+ * /public/branding (nebula, fontes e lockup compartilhados do kit de marca).
+ */
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/branding/JetBrainsMono-Variable.woff2') format('woff2');
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'VT323';
+  src: url('/branding/VT323-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.alogin {
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  color: #eff8f3;
+  background:
+    linear-gradient(rgba(20, 20, 20, 0.8), rgba(20, 20, 20, 0.8)),
+    url('/branding/login-bg.webp') center / cover no-repeat fixed;
+}
+
+/* painel esquerdo até o CENTRO da tela (geometria do ApolloAuth: 50vw - 24px) */
+.alogin-painel {
+  flex: 0 0 auto;
+  width: calc(50vw - 24px);
+  position: relative;
+  border-radius: 16px;
+  background:
+    url('/branding/am-lockup-verde.png') no-repeat 28px 28px / 160px auto,
+    linear-gradient(to top, rgba(4, 15, 9, 0.82) 0%, rgba(4, 15, 9, 0) 42%),
+    #0d0d0d url('/branding/login-panel.webp') center / cover no-repeat;
+  box-shadow:
+    0 0 44px rgba(47, 230, 140, 0.1),
+    inset 0 0 60px rgba(0, 0, 0, 0.35);
+}
+.alogin-frase {
+  position: absolute;
+  left: 24px;
+  bottom: 26px;
+  max-width: calc(100% - 48px);
+  font-size: 14.5px;
+  line-height: 1.5;
+  opacity: 0.94;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* coluna direita: form solto centralizado (sem card, como no IdP) */
+.alogin-col {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.alogin-form {
+  width: min(385px, 92vw);
+}
+
+.alogin-titulo {
+  margin: 0 0 24px;
+  font-family: 'VT323', monospace;
+  font-weight: 400;
+  font-size: 45px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: #2fe68c;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow:
+    0 0 1px rgba(47, 230, 140, 0.95),
+    0 0 6px rgba(47, 230, 140, 0.8),
+    0 0 15px rgba(47, 230, 140, 0.55),
+    0 0 34px rgba(47, 230, 140, 0.35);
+}
+
+.alogin-label {
+  display: block;
+  margin: 0 0 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #eff8f3;
+}
+.alogin-req {
+  color: #fd4b2d;
+}
+
+.alogin-input {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 20px;
+  padding: 12px 15px;
+  background: rgba(22, 25, 23, 0.85);
+  color: #eff8f3;
+  border: 1px solid rgba(158, 171, 164, 0.3);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+}
+.alogin-input:focus {
+  outline: 0;
+  border-color: #2fe68c;
+  box-shadow: 0 0 0 3px rgba(47, 230, 140, 0.18);
+}
+.alogin-input::placeholder {
+  color: #8a938e;
+  opacity: 1;
+  font-style: italic;
+}
+/* autofill do Chrome pinta branco por cima — só o inset gigante sobrescreve */
+.alogin-input:-webkit-autofill,
+.alogin-input:-webkit-autofill:hover,
+.alogin-input:-webkit-autofill:focus {
+  -webkit-box-shadow: inset 0 0 0 1000px #161916;
+  -webkit-text-fill-color: #eff8f3;
+  caret-color: #eff8f3;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+.alogin-erro {
+  margin: -6px 0 14px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #fd6a52;
+}
+
+.alogin-btn {
+  width: 100%;
+  margin-top: 28px; /* 20 do input + 28 = 48, o respiro do IdP */
+  padding: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: #2fe68c;
+  color: #202020;
+  border: 1px solid #2fe68c;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  box-shadow:
+    0 0 12px rgba(47, 230, 140, 0.5),
+    0 0 28px rgba(47, 230, 140, 0.28);
+  transition: box-shadow 0.15s ease;
+}
+.alogin-btn:hover:not(:disabled) {
+  box-shadow:
+    0 0 16px rgba(47, 230, 140, 0.65),
+    0 0 36px rgba(47, 230, 140, 0.38);
+}
+.alogin-btn:disabled {
+  opacity: 0.75;
+  cursor: default;
+}
+.alogin-spin {
+  width: 19px;
+  height: 19px;
+  animation: alogin-gira 1s linear infinite;
+}
+@keyframes alogin-gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.alogin-rodape {
+  margin: 28px 0 0;
+  text-align: center;
+  font-size: 11px;
+  color: #6b746f;
+}
+
+.alogin-lockup-mobile {
+  display: none;
+}
+
+/* telas estreitas: sem split — lockup acima do form centrado */
+@media (max-width: 1100px) {
+  .alogin {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .alogin-painel {
+    display: none;
+  }
+  .alogin-lockup-mobile {
+    display: block;
+    width: 160px;
+    margin: 0 auto 24px;
+  }
+  .alogin-titulo {
+    font-size: 30px;
+  }
+}

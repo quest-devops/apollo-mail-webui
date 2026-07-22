@@ -5,85 +5,127 @@
  */
 
 import { type FormEvent, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 
-import Logo from '@/components/common/Logo';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { startAuthFlow } from '@/services/auth/oauth';
+import { useAuthStore } from '@/stores/authStore';
+import { getBasePath } from '@/lib/basePath';
+import { authenticateWithPassword, startAuthFlow, MfaRequiredError } from '@/services/auth/oauth';
 
+import './login-apollo.css';
+
+/**
+ * Login em UMA tela, no padrão visual dos apps Apollo (réplica do ApolloAuth):
+ * painel de nebula à esquerda com a lockup e a frase de marca, formulário solto
+ * à direita (usuário + senha juntos). A autenticação é direta contra a API do
+ * Stalwart — nada de redirecionar para a tela de login do servidor.
+ */
 export default function LoginPage() {
-  const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
   const originalPath = (location.state as { from?: string } | null)?.from ?? null;
   const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  function safeDestination(): string {
+    const basePath = getBasePath();
+    const candidate = originalPath ?? '/';
+    const stripped = candidate.startsWith(basePath) ? candidate.slice(basePath.length) || '/' : candidate;
+    const isAuthPath =
+      stripped === '/login' ||
+      stripped.startsWith('/login?') ||
+      stripped === '/oauth/callback' ||
+      stripped.startsWith('/oauth/callback?');
+    return isAuthPath ? '/' : stripped;
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const trimmed = username.trim();
-    if (!trimmed) return;
+    const user = username.trim();
+    if (!user || !password || loading) return;
 
     setError(null);
     setLoading(true);
 
     try {
-      await startAuthFlow(trimmed, originalPath);
+      const { tokens, tokenEndpoint, endSessionEndpoint } = await authenticateWithPassword(user, password);
+      useAuthStore
+        .getState()
+        .setTokens(tokens.access_token, tokens.refresh_token, tokens.expires_in, tokenEndpoint, endSessionEndpoint);
+      navigate(safeDestination(), { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('login.error', 'An unexpected error occurred'));
+      if (err instanceof MfaRequiredError) {
+        // Conta com verificação em duas etapas: cai no fluxo com a página do
+        // servidor (que coleta o OTP) até esta tela ganhar o campo de código.
+        try {
+          await startAuthFlow(user, originalPath);
+          return;
+        } catch (flowErr) {
+          setError(flowErr instanceof Error ? flowErr.message : 'Não foi possível iniciar a autenticação.');
+        }
+      } else {
+        setError(err instanceof Error ? err.message : 'Não foi possível autenticar. Tente novamente.');
+      }
       setLoading(false);
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-content-background px-4">
-      <Card className="w-full max-w-sm shadow-sm">
-        <CardHeader className="items-center text-center">
-          <Logo />
-        </CardHeader>
+    <div className="alogin">
+      <aside className="alogin-painel" aria-hidden="true">
+        <span className="alogin-frase">ApolloMail — seu e-mail profissional, num só lugar.</span>
+      </aside>
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-center text-sm text-muted-foreground">
-                {t('login.prompt', 'Enter your account name to continue')}
-              </p>
-              <Input
-                id="username"
-                type="text"
-                autoComplete="username"
-                autoFocus
-                placeholder={t('login.usernamePlaceholder', 'user@example.com')}
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                disabled={loading}
-                aria-label={t('login.prompt', 'Enter your account name to continue')}
-              />
-            </div>
+      <main className="alogin-col">
+        <img className="alogin-lockup-mobile" src="/branding/am-lockup-verde.png" alt="ApolloMail" />
 
-            {error && (
-              <p className="text-sm text-destructive" role="alert">
-                {error}
-              </p>
-            )}
+        <form className="alogin-form" onSubmit={handleSubmit} noValidate>
+          <h1 className="alogin-titulo">Bem-vindo à Apollo.</h1>
 
-            <Button type="submit" className="w-full" disabled={loading || !username.trim()}>
-              {loading ? (
-                <Loader2 className="animate-spin" />
-              ) : (
-                <>
-                  {t('login.continue', 'Continue')}
-                  <ArrowRight />
-                </>
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          <label className="alogin-label" htmlFor="alogin-user">
+            E-mail ou usuário <span className="alogin-req">*</span>
+          </label>
+          <input
+            id="alogin-user"
+            className="alogin-input"
+            type="text"
+            autoComplete="username"
+            autoFocus
+            placeholder="Digite seu e-mail ou usuário"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            disabled={loading}
+          />
+
+          <label className="alogin-label" htmlFor="alogin-pass">
+            Senha <span className="alogin-req">*</span>
+          </label>
+          <input
+            id="alogin-pass"
+            className="alogin-input"
+            type="password"
+            autoComplete="current-password"
+            placeholder="Digite sua senha"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
+          />
+
+          {error && (
+            <p className="alogin-erro" role="alert">
+              {error}
+            </p>
+          )}
+
+          <button className="alogin-btn" type="submit" disabled={loading || !username.trim() || !password}>
+            {loading ? <Loader2 className="alogin-spin" aria-label="Autenticando" /> : 'Conecte-se'}
+          </button>
+
+          <p className="alogin-rodape">ApolloMail · Console</p>
+        </form>
+      </main>
     </div>
   );
 }

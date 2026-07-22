@@ -124,6 +124,76 @@ function getRedirectUri(): string {
   return `${window.location.origin}${basePath}/oauth/callback`;
 }
 
+/** Conta exige verificação em duas etapas — esta tela ainda não coleta OTP. */
+export class MfaRequiredError extends Error {}
+
+export interface DirectAuthSuccess {
+  tokens: TokenResponse;
+  tokenEndpoint: string;
+  endSessionEndpoint?: string;
+}
+
+/**
+ * Login em UMA tela (padrão Apollo): autentica usuário+senha direto contra o
+ * POST /api/auth do Stalwart — o MESMO endpoint que a página /login dele usa
+ * (payload authCode com PKCE; resposta {type:'authenticated', client_code}) —
+ * e troca o code por tokens sem nunca navegar para a tela do servidor.
+ */
+export async function authenticateWithPassword(username: string, password: string): Promise<DirectAuthSuccess> {
+  const discovery = await discover(username);
+  const tokenEndpoint = resolveEndpoint(discovery.token_endpoint);
+  const endSessionEndpoint = discovery.end_session_endpoint
+    ? resolveEndpoint(discovery.end_session_endpoint)
+    : undefined;
+
+  const codeVerifier = generateCodeVerifier();
+  const { challenge: codeChallenge, method: codeChallengeMethod } = await generateCodeChallenge(codeVerifier);
+  const state = generateState();
+  const redirectUri = getRedirectUri();
+
+  const response = await fetch(`${getApiBaseUrl()}/api/auth`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      type: 'authCode',
+      accountName: username,
+      accountSecret: password,
+      clientId: CLIENT_ID,
+      redirectUri,
+      state,
+      codeChallenge,
+      codeChallengeMethod,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      i18n.t('login.serverError', 'Falha no servidor de autenticação ({{status}}). Tente novamente.', {
+        status: response.status,
+      }),
+    );
+  }
+
+  const data = (await response.json()) as { type?: string; client_code?: string };
+
+  if (data.type === 'failure') {
+    throw new Error(i18n.t('login.badCredentials', 'Usuário ou senha inválidos. Tente novamente.'));
+  }
+  if (data.type === 'mfaRequired') {
+    throw new MfaRequiredError();
+  }
+  if (data.type !== 'authenticated' || typeof data.client_code !== 'string') {
+    throw new Error(
+      i18n.t('login.unexpectedResponse', 'Resposta inesperada do servidor de autenticação.'),
+    );
+  }
+
+  const tokens = await exchangeCode(data.client_code, codeVerifier, tokenEndpoint, redirectUri);
+  return { tokens, tokenEndpoint, endSessionEndpoint };
+}
+
 // Os endpoints do discover vêm relativos (ex.: "/login", "/auth/token") — pertencem ao servidor da API.
 // Em dev o SPA roda em porta separada (5173) e a API em 8080; sem resolver contra a base da API o
 // navegador resolveria contra a origem do SPA e o login quebraria. Em produção (API = origem) é no-op.
