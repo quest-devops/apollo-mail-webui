@@ -28,6 +28,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [ssoInfo, setSsoInfo] = useState(false);
 
   function safeDestination(): string {
     const basePath = getBasePath();
@@ -122,6 +123,30 @@ export default function LoginPage() {
           <button className="alogin-btn" type="submit" disabled={loading || !username.trim() || !password}>
             {loading ? <Loader2 className="alogin-spin" aria-label="Autenticando" /> : 'Conecte-se'}
           </button>
+
+          <div className="alogin-divisor" aria-hidden="true">
+            ou continue com
+          </div>
+
+          {/* SSO via ApolloAuth (Authentik/OIDC). A integração no servidor ainda não
+              existe — provider no IdP + aceitação do token no Stalwart. Quando ela
+              chegar, este handler vira o authorization code + PKCE contra o IdP. */}
+          <button
+            className="alogin-btn-sso"
+            type="button"
+            onClick={() => setSsoInfo(true)}
+            disabled={loading}
+          >
+            <img src="/branding/aa-icone.png" alt="" aria-hidden="true" />
+            Continuar com ApolloAuth
+          </button>
+
+          {ssoInfo && (
+            <p className="alogin-info" role="status">
+              O login com ApolloAuth será habilitado em breve — a integração SSO com o IdP ainda não está ativa
+              neste servidor.
+            </p>
+          )}
 
           <p className="alogin-rodape">ApolloMail · Console</p>
         </form>

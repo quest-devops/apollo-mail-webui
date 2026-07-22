@@ -183,6 +183,64 @@
   }
 }
 
+/* divisor "ou continue com" + botão SSO — mesma posição do Google no ApolloAuth */
+.alogin-divisor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0;
+  color: #8a938e;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.alogin-divisor::before,
+.alogin-divisor::after {
+  content: '';
+  flex: 1 1 auto;
+  height: 1px;
+  background: rgba(158, 171, 164, 0.25);
+}
+
+.alogin-btn-sso {
+  width: 100%;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  background: #ffffff;
+  color: #202020;
+  border: 1px solid #ffffff;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: background 0.15s ease;
+}
+.alogin-btn-sso:hover:not(:disabled) {
+  background: #efefef;
+}
+.alogin-btn-sso:disabled {
+  opacity: 0.75;
+  cursor: default;
+}
+.alogin-btn-sso img {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.alogin-info {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #8a938e;
+  text-align: center;
+}
+
 .alogin-rodape {
   margin: 28px 0 0;
   text-align: center;
