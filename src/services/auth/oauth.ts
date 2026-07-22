@@ -151,6 +151,17 @@ export async function authenticateWithPassword(username: string, password: strin
   const state = generateState();
   const redirectUri = getRedirectUri();
 
+  // MESMA política de scope do fluxo por redirect (startAuthFlow): sem isso o
+  // token sai com escopo diferente do esperado — a session JMAP vinha vazia
+  // ("No primary account ID available") e, sem offline_access, sem refresh.
+  const { scopes_supported } = discovery;
+  let scope: string | undefined;
+  if (SCOPES && SCOPES.length > 0) {
+    scope = SCOPES;
+  } else if (scopes_supported?.includes('openid')) {
+    scope = ['openid', 'email', 'profile', 'offline_access'].filter((s) => scopes_supported.includes(s)).join(' ');
+  }
+
   const response = await fetch(`${getApiBaseUrl()}/api/auth`, {
     method: 'POST',
     credentials: 'same-origin',
@@ -165,6 +176,7 @@ export async function authenticateWithPassword(username: string, password: strin
       state,
       codeChallenge,
       codeChallengeMethod,
+      ...(scope ? { scope } : {}),
     }),
   });
 
