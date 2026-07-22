@@ -9,15 +9,17 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getApiBaseUrl } from '@/services/api';
 
-// Lockup oficial ApolloMail (verde-bicolor) — public/apollomail-lockup.png, derivado de
-// apps/mail/logo/ (fonte canônica no Brand Engine). Readaptar, nunca redesenhar.
+// Lockup oficial ApolloMail (INTEIRA VERDE, horizontal) — public/branding/am-lockup-verde.png,
+// derivada de apps/mail/logo/ (fonte canônica no Brand Engine; build de 22/jul com o ícone
+// corrigido — proporção útil 6.27, o texto dá o tom). Readaptar, nunca redesenhar.
+// 18px de altura ≈ os 17px da topbar do webmail (a topbar daqui é um tico mais alta).
 export function DefaultLogo() {
   const { t } = useTranslation();
   return (
     <img
-      src="/apollomail-lockup.png"
+      src="/branding/am-lockup-verde.png"
       alt={t('logo.stalwartAlt', 'ApolloMail')}
-      className="h-8 w-auto max-w-[260px] object-contain"
+      className="h-[18px] w-auto object-contain"
     />
   );
 }
