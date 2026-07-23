@@ -11,6 +11,14 @@ import i18n from '@/i18n';
 const CLIENT_ID = (import.meta.env.VITE_OAUTH_CLIENT_ID as string) || 'stalwart-webui';
 const SCOPES = import.meta.env.VITE_OAUTH_SCOPES as string | undefined;
 
+// SSO ApolloAuth (Authentik). O Stalwart valida o token deste IdP direto — Directory
+// tipo OIDC apontando para o MESMO issuer. Client público: PKCE, sem segredo no browser.
+const APOLLOAUTH_ISSUER =
+  (import.meta.env.VITE_APOLLOAUTH_ISSUER as string) ||
+  'https://auth.apollosolution.com.br/application/o/mail-admin/';
+const APOLLOAUTH_CLIENT_ID =
+  (import.meta.env.VITE_APOLLOAUTH_CLIENT_ID as string) || 'apollo-mail-console';
+
 const SESSION_PREFIX = 'stalwart-oauth-';
 
 interface DiscoveryResponse {
@@ -92,12 +100,15 @@ export async function exchangeCode(
   codeVerifier: string,
   tokenEndpoint: string,
   redirectUri: string,
+  // O SSO do ApolloAuth usa outro client_id; sem isto a troca do code iria com o
+  // client do Stalwart e o IdP rejeitaria (invalid_client).
+  clientId: string = CLIENT_ID,
 ): Promise<TokenResponse> {
   const body = new URLSearchParams({
     grant_type: 'authorization_code',
     code,
     code_verifier: codeVerifier,
-    client_id: CLIENT_ID,
+    client_id: clientId,
     redirect_uri: redirectUri,
   });
 
@@ -206,6 +217,64 @@ export async function authenticateWithPassword(username: string, password: strin
   return { tokens, tokenEndpoint, endSessionEndpoint };
 }
 
+/**
+ * SSO via ApolloAuth: authorization code + PKCE contra o IdP (Authentik).
+ * Diferente do fluxo nativo, aqui o token vem do IdP e é o STALWART que o valida
+ * (Directory OIDC com o mesmo issuer) — por isso o client_id vai pro sessionStorage:
+ * a troca do code no callback precisa usar o client do IdP, não o do Stalwart.
+ */
+export async function startApolloAuthFlow(returnUrl?: string | null): Promise<void> {
+  const wellKnown = `${APOLLOAUTH_ISSUER.replace(/\/+$/, '')}/.well-known/openid-configuration`;
+  const response = await fetch(wellKnown);
+  if (!response.ok) {
+    throw new Error(
+      i18n.t('login.idpUnreachable', 'Não foi possível falar com o ApolloAuth ({{status}}).', {
+        status: response.status,
+      }),
+    );
+  }
+  const discovery = (await response.json()) as DiscoveryResponse;
+
+  const codeVerifier = generateCodeVerifier();
+  const { challenge: codeChallenge, method: codeChallengeMethod } = await generateCodeChallenge(codeVerifier);
+  const state = generateState();
+  const redirectUri = getRedirectUri();
+
+  const candidate = returnUrl ?? window.location.pathname + window.location.search;
+  const basePath = getBasePath();
+  const stripped = candidate.startsWith(basePath) ? candidate.slice(basePath.length) : candidate;
+  const isAuthPath =
+    stripped === '/login' ||
+    stripped.startsWith('/login?') ||
+    stripped === '/oauth/callback' ||
+    stripped.startsWith('/oauth/callback?');
+
+  sessionStorage.setItem(`${SESSION_PREFIX}code_verifier`, codeVerifier);
+  sessionStorage.setItem(`${SESSION_PREFIX}token_endpoint`, discovery.token_endpoint);
+  sessionStorage.setItem(`${SESSION_PREFIX}state`, state);
+  sessionStorage.setItem(`${SESSION_PREFIX}return_url`, isAuthPath ? '' : candidate);
+  sessionStorage.setItem(`${SESSION_PREFIX}client_id`, APOLLOAUTH_CLIENT_ID);
+  if (discovery.end_session_endpoint) {
+    sessionStorage.setItem(`${SESSION_PREFIX}end_session_endpoint`, discovery.end_session_endpoint);
+  } else {
+    sessionStorage.removeItem(`${SESSION_PREFIX}end_session_endpoint`);
+  }
+
+  // openid+email são os scopes que o Stalwart exige (requireScopes); offline_access
+  // traz o refresh token. profile carrega o preferred_username, de onde ele deriva a conta.
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: APOLLOAUTH_CLIENT_ID,
+    redirect_uri: redirectUri,
+    code_challenge: codeChallenge,
+    code_challenge_method: codeChallengeMethod,
+    state,
+    scope: 'openid email profile offline_access',
+  });
+
+  window.location.href = `${discovery.authorization_endpoint}?${params.toString()}`;
+}
+
 // Os endpoints do discover vêm relativos (ex.: "/login", "/auth/token") — pertencem ao servidor da API.
 // Em dev o SPA roda em porta separada (5173) e a API em 8080; sem resolver contra a base da API o
 // navegador resolveria contra a origem do SPA e o login quebraria. Em produção (API = origem) é no-op.
@@ -281,6 +350,8 @@ export function getStoredOAuthData() {
     state: sessionStorage.getItem(`${SESSION_PREFIX}state`),
     returnUrl: sessionStorage.getItem(`${SESSION_PREFIX}return_url`),
     endSessionEndpoint: sessionStorage.getItem(`${SESSION_PREFIX}end_session_endpoint`),
+    // ausente = fluxo nativo do Stalwart (o default de exchangeCode cobre)
+    clientId: sessionStorage.getItem(`${SESSION_PREFIX}client_id`),
   };
 }
 
@@ -290,6 +361,7 @@ export function clearStoredOAuthData(): void {
   sessionStorage.removeItem(`${SESSION_PREFIX}state`);
   sessionStorage.removeItem(`${SESSION_PREFIX}return_url`);
   sessionStorage.removeItem(`${SESSION_PREFIX}end_session_endpoint`);
+  sessionStorage.removeItem(`${SESSION_PREFIX}client_id`);
 }
 
 export function getOAuthRedirectUri(): string {

@@ -10,7 +10,12 @@ import { Loader2 } from 'lucide-react';
 
 import { useAuthStore } from '@/stores/authStore';
 import { getBasePath } from '@/lib/basePath';
-import { authenticateWithPassword, startAuthFlow, MfaRequiredError } from '@/services/auth/oauth';
+import {
+  authenticateWithPassword,
+  startAuthFlow,
+  startApolloAuthFlow,
+  MfaRequiredError,
+} from '@/services/auth/oauth';
 
 import './login-apollo.css';
 
@@ -28,7 +33,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [ssoInfo, setSsoInfo] = useState(false);
+  const [ssoLoading, setSsoLoading] = useState(false);
 
   function safeDestination(): string {
     const basePath = getBasePath();
@@ -40,6 +45,18 @@ export default function LoginPage() {
       stripped === '/oauth/callback' ||
       stripped.startsWith('/oauth/callback?');
     return isAuthPath ? '/' : stripped;
+  }
+
+  async function handleApolloAuth() {
+    if (loading || ssoLoading) return;
+    setError(null);
+    setSsoLoading(true);
+    try {
+      await startApolloAuthFlow(originalPath); // navega para o IdP; não retorna em caso de sucesso
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível iniciar o login com ApolloAuth.');
+      setSsoLoading(false);
+    }
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -128,25 +145,23 @@ export default function LoginPage() {
             ou continue com
           </div>
 
-          {/* SSO via ApolloAuth (Authentik/OIDC). A integração no servidor ainda não
-              existe — provider no IdP + aceitação do token no Stalwart. Quando ela
-              chegar, este handler vira o authorization code + PKCE contra o IdP. */}
+          {/* SSO via ApolloAuth (Authentik/OIDC): authorization code + PKCE contra o IdP.
+              O token que volta é validado pelo próprio Stalwart (Directory tipo OIDC). */}
           <button
             className="alogin-btn-sso"
             type="button"
-            onClick={() => setSsoInfo(true)}
-            disabled={loading}
+            onClick={handleApolloAuth}
+            disabled={loading || ssoLoading}
           >
-            <img src="/branding/aa-icone.png" alt="" aria-hidden="true" />
-            Continuar com ApolloAuth
+            {ssoLoading ? (
+              <Loader2 className="alogin-spin" aria-label="Redirecionando" />
+            ) : (
+              <>
+                <img src="/branding/aa-icone.png" alt="" aria-hidden="true" />
+                Continuar com ApolloAuth
+              </>
+            )}
           </button>
-
-          {ssoInfo && (
-            <p className="alogin-info" role="status">
-              O login com ApolloAuth será habilitado em breve — a integração SSO com o IdP ainda não está ativa
-              neste servidor.
-            </p>
-          )}
 
           <p className="alogin-legal">
             Ao continuar, você concorda com os Termos de Uso e a Política de Privacidade.

@@ -35,7 +35,7 @@ export default function OAuthCallback() {
           throw new Error(t('oauth.missingParams', 'Missing authorization code or state parameter'));
         }
 
-        const { codeVerifier, tokenEndpoint, state, returnUrl, endSessionEndpoint } = getStoredOAuthData();
+        const { codeVerifier, tokenEndpoint, state, returnUrl, endSessionEndpoint, clientId } = getStoredOAuthData();
 
         if (!state || state !== stateParam) {
           throw new Error(t('oauth.stateMismatch', 'State parameter mismatch. Please try logging in again.'));
@@ -46,7 +46,14 @@ export default function OAuthCallback() {
         }
 
         const redirectUri = getOAuthRedirectUri();
-        const tokenResponse = await exchangeCode(code, codeVerifier, tokenEndpoint, redirectUri);
+        // clientId presente = veio do SSO ApolloAuth; ausente = fluxo nativo do Stalwart
+        const tokenResponse = await exchangeCode(
+          code,
+          codeVerifier,
+          tokenEndpoint,
+          redirectUri,
+          clientId ?? undefined,
+        );
 
         useAuthStore
           .getState()
