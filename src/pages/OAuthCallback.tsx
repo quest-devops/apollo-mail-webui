@@ -63,6 +63,7 @@ export default function OAuthCallback() {
             tokenResponse.expires_in,
             tokenEndpoint,
             endSessionEndpoint,
+            clientId,
           );
 
         clearStoredOAuthData();

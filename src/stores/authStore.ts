@@ -18,6 +18,9 @@ interface AuthState {
   tokenExpiresAt: number | null;
   tokenEndpoint: string | null;
   endSessionEndpoint: string | null;
+  // client_id que emitiu os tokens: o refresh precisa dele. Sem isto o refresh ia
+  // com o client do Stalwart para o endpoint do IdP (SSO) -> 400 invalid_client.
+  oauthClientId: string | null;
   accounts: Record<string, AccountInfo>;
   primaryAccountId: string | null;
   activeAccountId: string | null;
@@ -31,6 +34,7 @@ interface AuthState {
     expiresIn: number,
     tokenEndpoint: string,
     endSessionEndpoint?: string | null,
+    oauthClientId?: string | null,
   ) => void;
   setSession: (
     accounts: Record<string, AccountInfo>,
@@ -53,6 +57,7 @@ export const useAuthStore = create<AuthState>()(
       tokenExpiresAt: null,
       tokenEndpoint: null,
       endSessionEndpoint: null,
+      oauthClientId: null,
       accounts: {},
       primaryAccountId: null,
       activeAccountId: null,
@@ -60,13 +65,14 @@ export const useAuthStore = create<AuthState>()(
       maxObjectsInGet: 500,
       maxObjectsInSet: 500,
 
-      setTokens: (access, refresh, expiresIn, tokenEndpoint, endSessionEndpoint) => {
+      setTokens: (access, refresh, expiresIn, tokenEndpoint, endSessionEndpoint, oauthClientId) => {
         set({
           accessToken: access,
           refreshToken: refresh,
           tokenExpiresAt: Date.now() + expiresIn * 1000,
           tokenEndpoint,
           endSessionEndpoint: endSessionEndpoint ?? null,
+          oauthClientId: oauthClientId ?? null,
         });
       },
 
@@ -95,6 +101,7 @@ export const useAuthStore = create<AuthState>()(
           tokenExpiresAt: null,
           tokenEndpoint: null,
           endSessionEndpoint: null,
+          oauthClientId: null,
           accounts: {},
           primaryAccountId: null,
           activeAccountId: null,

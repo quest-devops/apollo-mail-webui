@@ -37,7 +37,7 @@ export async function refreshAccessToken(): Promise<void> {
   }
 
   refreshPromise = (async () => {
-    const { refreshToken, tokenEndpoint, logout } = useAuthStore.getState();
+    const { refreshToken, tokenEndpoint, oauthClientId, logout } = useAuthStore.getState();
 
     if (!refreshToken || !tokenEndpoint) {
       logout();
@@ -45,7 +45,10 @@ export async function refreshAccessToken(): Promise<void> {
       throw new Error('No refresh token or token endpoint available');
     }
 
-    const clientId = (import.meta.env.VITE_OAUTH_CLIENT_ID as string) || 'stalwart-webui';
+    // O client_id TEM que ser o que emitiu os tokens: no SSO o tokenEndpoint é o do
+    // ApolloAuth, e mandar o client do Stalwart ali devolve 400 invalid_client.
+    const clientId =
+      oauthClientId || (import.meta.env.VITE_OAUTH_CLIENT_ID as string) || 'stalwart-webui';
 
     try {
       const response = await fetch(tokenEndpoint, {
