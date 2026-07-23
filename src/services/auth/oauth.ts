@@ -13,9 +13,12 @@ const SCOPES = import.meta.env.VITE_OAUTH_SCOPES as string | undefined;
 
 // SSO ApolloAuth (Authentik). O Stalwart valida o token deste IdP direto — Directory
 // tipo OIDC apontando para o MESMO issuer. Client público: PKCE, sem segredo no browser.
+// Domínio CANÔNICO do IdP (apollo.apolloauth.com.br). O Authentik deriva o `iss` do
+// host da requisição, e o Stalwart compara com o issuerUrl do Directory — usar o
+// domínio legado (auth.apollosolution) aqui faria os dois divergirem.
 const APOLLOAUTH_ISSUER =
   (import.meta.env.VITE_APOLLOAUTH_ISSUER as string) ||
-  'https://auth.apollosolution.com.br/application/o/mail-admin/';
+  'https://apollo.apolloauth.com.br/application/o/mail-admin/';
 const APOLLOAUTH_CLIENT_ID =
   (import.meta.env.VITE_APOLLOAUTH_CLIENT_ID as string) || 'apollo-mail-console';
 
